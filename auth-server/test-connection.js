@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+const { Pool } = require('./node_modules/@types/pg');
 
 const pool = new Pool({
   connectionString: 'postgresql://postgres:rising-sun@192.168.254.103:5432/postgres',
