@@ -11,10 +11,10 @@ const ACCESS_TOKEN_EXPIRATION = '10s';
 @Injectable()
 export class TokenService {
 
-     constructor(
+    constructor(
         private readonly db: DatabaseService,
         private configService: ConfigService
-      ) {}
+    ) {}
 
     async createTokens(data: Record<string, any>): Promise<SessionInfoDto> {
 

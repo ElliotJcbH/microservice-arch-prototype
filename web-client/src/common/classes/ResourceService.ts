@@ -1,36 +1,30 @@
-import { jwtDecode } from 'node_modules/jwt-decode/build/cjs';
 import HttpError from './HttpError';
-import AuthService from './AuthService';
-
-interface requestProps {
-    url: string;
-    options?: RequestInit;
-    timeOutMs?: number 
-}
+import type AuthService from './AuthService';
+import type JWT from './JWT';
 
 export default class ResourceService {
 
-    constructor() {}
+    constructor(
+        private accessToken: JWT,
+        private authService: AuthService,
+    ) {}
 
-    static async request({
-        url,
-        options = {},
-        timeOutMs = 5000,
-    }: requestProps): Promise<Response | undefined> {
+    async request(
+        ...args: Parameters<typeof fetch>
+    ): Promise<Response | undefined> { 
 
-        const accessToken = '';
-        const decodedToken = jwtDecode(accessToken);
-        const unixTimeNow = Math.floor(Date.now() / 1000);
-        const isAccessTokenExpired = decodedToken.exp || 0 < unixTimeNow;
+        const [url, options = {}] = args;
 
-        if(isAccessTokenExpired) {
-
-            res = await AuthService.renewAccessToken
+        if(this.accessToken.isExpired()) {
+            const res = await this.authService.renewAccessToken()
         };
         
         const headers = new Headers(options.headers);
+        if (!headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${this.accessToken.getToken()}`);
+        }
         options.headers = headers;
-
+ 
         try {
             const res: Response = await fetch(url, { ...options });
 
@@ -38,7 +32,7 @@ export default class ResourceService {
                 throw new HttpError(res.status, res.statusText, res)
             }
 
-            return res
+            return res;
 
         } catch(e) {
 
@@ -50,14 +44,14 @@ export default class ResourceService {
 
     }
 
-    private static async handleRequestHttpError(e: HttpError) {
+    private async handleRequestHttpError(e: HttpError) {
 
         let res;
 
         switch(e.status) {
             case 401: 
             case 404:
-                res = await AuthService.renewAccessToken();
+                res = await this.authService.renewAccessToken();
                 break;
         }
 

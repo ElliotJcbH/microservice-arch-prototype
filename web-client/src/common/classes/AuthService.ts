@@ -1,28 +1,39 @@
-import { jwtDecode } from "jwt-decode";
-import type { JwtPayload } from "jwt-decode";
+import type JWT from "./JWT";
 
-// This is a class for accessing the authentication / authorization service api
 export default class AuthService {
+    // This is a class for accessing the authentication / authorization service api
+    private authUrl = ''
 
-    private constructor() {}
+    constructor(
+        private accessToken: JWT
+    ) {}
 
-    static async registerUser(email: string, password: string) {
+    async registerUser(email: string, password: string) {
+
+        const credentials = btoa(`${email}:${password}`)
+
+        const req = await fetch(this.authUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Basic ${credentials}`
+            },
+        })
 
     }
 
-    static async renewAccessToken(userId: string): Promise<any> {
+    async renewAccessToken(): Promise<any> {
 
 
 
     }
 
-    static async registerTokens(userId: string) {
+    async registerTokens() {
 
 
         
     }
 
-    static async clearRefreshToken(userId: string) {
+    async clearRefreshToken() {
 
 
 
