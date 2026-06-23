@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException, Get, Headers, Delete } from "@nestjs/common";
+import { Controller, Post, Body, UnauthorizedException, Get, Headers, Delete, Head } from "@nestjs/common";
 import { CreateUserForm } from "./dto/create-user-form.dto";
 import { SignInUserForm } from "./dto/signin-user-form.dto";
 import { AuthService } from "./auth.service";
@@ -13,14 +13,43 @@ export class AuthController {
     ) {}
 
     @Post('register')
-    async register(@Body() formData: CreateUserForm) {
-        
-        const user = await this.authService.register(formData);
+    async register(
+        @Headers('authorization') authHeader: string,
+        @Body() createUserDto: CreateUserForm
+    ) {
 
-        const sessionInfo = await this.tokenService.createTokens(user);
+        if(!authHeader || !authHeader.startsWith('Basic ')) {
+            throw new UnauthorizedException('Missing or Invalid Credentials');
+        }
+
+        try {
+            // 2. Extract the Base64 part
+            const base64Credentials = authHeader.split(' ')[1];
+
+            // 3. Decode Base64 to a UTF-8 string ("username:password")
+            const decoded = Buffer.from(base64Credentials, 'base64').toString('utf-8');
+
+            // 4. Split the string by the colon delimiter
+            const [username, password] = decoded.split(':');
+
+            // 5. Use the credentials (e.g., validate against a database)
+            return { username, password };
         
-        return sessionInfo; 
+        } catch (error) {
+            throw new UnauthorizedException('Failed to decode credentials');
+        }   
+
     }
+
+    // @Post('register')
+    // async register(@Body() formData: CreateUserForm) {
+        
+    //     const user = await this.authService.register(formData);
+
+    //     const sessionInfo = await this.tokenService.createTokens(user);
+        
+    //     return sessionInfo; 
+    // }
 
     @Post('login')
     async login(@Body() formData: SignInUserForm) {
@@ -31,16 +60,6 @@ export class AuthController {
         
         return sessionInfo;
     }
-
-    // @Delete('logout')
-    // async logout(@Body() logoutBody: { userId: string }) {
-
-    //     const isRefreshTokenDeleted = await this.tokenService.deleteRefreshToken(logoutBody.userId);
-
-    //     return {
-    //         isRefreshTokenDeleted: isRefreshTokenDeleted
-    //     }
-    // }
 
     @Delete('logout')
     async logout(@Headers('authorization') authorization: string) {
