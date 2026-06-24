@@ -1,11 +1,15 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as jwt from 'jsonwebtoken';
 import { SessionInfoDto } from "src/auth/dto/session-info.dto";
 import SessionUserInfo from "src/common/interface/session-user-info.interface";
 import { DatabaseService } from "src/common/providers/database/database.service";
+import { KeysService } from "../keys.service";
+import crypto from 'node:crypto';
+import { hashPassword, verifyPassword } from "src/utils/auth.utils";
+import { JwksService } from "../jwks.service";
 
-const REFRESH_TOKEN_EXPIRATION = '30d';
+const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 const ACCESS_TOKEN_EXPIRATION = '10s';
 
 @Injectable()
@@ -13,41 +17,27 @@ export class TokenService {
 
     constructor(
         private readonly db: DatabaseService,
-        private configService: ConfigService
+        private readonly configService: ConfigService,
+        private readonly keysService: KeysService,
+        private readonly jwksService: JwksService,
     ) {}
 
     async createTokens(data: Record<string, any>): Promise<SessionInfoDto> {
 
-        const refreshToken = await this.createRefreshToken(data);
-        const accessToken = await this.createAccessToken(data);
+        const rawRefreshToken = await this.createRefreshToken(data);
+        const signedAccessToken = await this.createAccessToken(data);
     
         return this.sessionBuilder(
-            accessToken,
-            refreshToken,
+            signedAccessToken,
+            rawRefreshToken,
             data as SessionUserInfo
         )
     }
-
-    async createRefreshToken(data: Record<string, any>) {
-        const refreshToken = jwt.sign(
-            {
-                user_id: data.user_id,
-                email: data.email,
-                username: data.username,
-                email_is_verified: data.email_is_verified,
-                metadata: data.metadata
-            },
-            this.configService.get<string>('JWT_SECRET'),
-            {expiresIn: REFRESH_TOKEN_EXPIRATION }
-        )
-
-        await this.saveRefreshToken(data.user_id, refreshToken);
-
-        return refreshToken;
-    }
     
-    createAccessToken(data: Record<string, any>) {
-        const accessToken = jwt.sign(
+    createAccessToken(data: Record<string, any>): string {
+        
+        const privateKey = this.keysService.getPrivateKey();
+        const signedAccessToken = jwt.sign(
             {
                 user_id: data.user_id,
                 email: data.email,
@@ -55,75 +45,126 @@ export class TokenService {
                 email_is_verified: data.email_is_verified,
                 metadata: data.metadata
             },
-            this.configService.get<string>('JWT_SECRET'),
+            privateKey,
             { expiresIn: ACCESS_TOKEN_EXPIRATION } 
         )
 
-        return accessToken;
+        return signedAccessToken;
     }
 
-    async verifyToken(accessToken: string): Promise<string | null> {
-        
-        const userId = this.parseToken(accessToken).user_id;
+    async renewAccessToken(accessToken: string, rawRefreshToken: string): Promise<string> {
 
-        const validAccessPayload = await this.verifyAccessToken(accessToken);
-        if(validAccessPayload) return accessToken;
-        
-        const validRefreshPayload = await this.verifyRefreshToken(userId);
-        if(validRefreshPayload) {
-            return this.createAccessToken(validRefreshPayload); // this returns an access token
+        let payload;
+        try {
+            payload = jwt.verify(accessToken, this.jwksService.getPublicKeyFromJwks()); // TODO: How to verify with JWKS?
+        } catch(e) {
+            throw new UnauthorizedException(e instanceof Error ? e.message : "Invalid access token");
         }
-
-        return null; // user has to re-do authorization steps
-    }
-
-    private async verifyAccessToken(accessToken: string) {
+        const userId = payload.user_id;
 
         try {
-            const payload = jwt.verify(
-                accessToken, 
-                this.configService.get<string>('JWT_SECRET'),
-            );    
-
-            return payload;
-        } catch (error) {
-            return null;
-        }
-
-    }
-
-    private async verifyRefreshToken(userId: string) {
-        try {
-            const query = 'SELECT * FROM auth.refresh_tokens WHERE user_id = $1';
+            const query = `
+                SELECT user_id, refresh_token, expires_at FROM auth.refresh_tokens
+                WHERE user_id = $1
+                LIMIT 1
+            `
             const result = await this.db.query(query, [userId]);
-            
-            if (!result.rows.length) {
-                return null; 
-            }
-            
-            const refreshToken = result.rows[0].token_id;
-            const payload = jwt.verify(
-                refreshToken,
-                this.configService.get<string>('JWT_SECRET'),
-            );
+            const hashedRefreshToken = result.rows[0].refresh_token;
 
-            return payload;
-        } catch (error) {
-            return null;
+            const isRefreshTokenValid = verifyPassword(rawRefreshToken, hashedRefreshToken);
+
+            if(!isRefreshTokenValid) throw new UnauthorizedException("Refresh token invalid")
+        } catch(e) {
+            throw new InternalServerErrorException(e instanceof Error ? e.message :  "Unexpected error");
         }
+
+        const newAccessToken = this.createAccessToken({
+            user_id: payload.user_id,
+            email: payload.email,
+            username: payload.username,
+            email_is_verified: payload.email_is_verified,
+            metadata: payload.metadata
+        })
+
+        return newAccessToken;
     }
 
-    private async saveRefreshToken(userId: string, refreshToken: string): Promise<boolean> {
-        
-        const query = 'INSERT INTO auth.refresh_tokens(token_id, user_id) VALUES($1, $2) RETURNING token_id';
+    async createRefreshToken(data: Record<string, any>): Promise<string> {
 
-        if(await this.db.query(query, [refreshToken, userId])[0]) return true;
+        const rawRefreshToken = crypto.randomBytes(32).toString('hex');
+        const hashedRefreshToken: string = await hashPassword(rawRefreshToken);
+
+        const result: boolean = await this.saveRefreshToken(data.user_id, hashedRefreshToken);
+
+        if(!result) throw new InternalServerErrorException("Failed to create refresh token");
+
+        return rawRefreshToken;
+    }
+
+    private async saveRefreshToken(userId: string, hashedRefreshToken: string): Promise<boolean> {
+        
+        const tokenExpiration = new Date();
+        tokenExpiration.setDate(tokenExpiration.getDate() + REFRESH_TOKEN_EXPIRATION_DAYS)
+
+        try {
+            const query = `
+                INSERT INTO auth.refresh_tokens(user_id, refresh_token, expires_at) 
+                VALUES($1, $2, $3) 
+                RETURNING token_id
+            `;
+            const result = await this.db.query(query, [userId, hashedRefreshToken, tokenExpiration]);
+            if(result.rows && result.rows.length > 0) return true;
+        } catch(e) {
+            throw new InternalServerErrorException(e instanceof Error ? e.message : "Unexpected error");
+        }
+        
 
         return false;
     }
 
-    async deleteRefreshToken(accessToken: string): Promise<boolean> {
+    async deleteRefreshToken(accessToken: string, rawRefreshToken: string): Promise<boolean> { // TODO
 
+        const userId = this.getUserIdFromToken(accessToken);
+
+        try {
+            const query1 = `
+                SELECT refresh_token FROM auth.refresh_tokens 
+                WHERE user_id = $1
+                LIMIT 1
+            `
+            const result1 = await this.db.query(query1, [userId]);
+            const hashedRefreshToken = result1.rows[0].refresh_token;
+
+            const isRefreshTokenValid = verifyPassword(rawRefreshToken, hashedRefreshToken);
+
+            if(!isRefreshTokenValid) throw new UnauthorizedException("Refresh token invalid"); // TODO: What would be the best way to handle this?  
+
+            const query2 = `
+                DELETE FROM auth.refresh_tokens 
+                WHERE user_id = $1
+            `
+            const result = await this.db.query(query2, [userId]);
+            if(result.rows && result.rows.length > 0) return true;
+        } catch(e) {
+            throw new InternalServerErrorException(e instanceof Error ? e.message : "Unexpected Error");
+        }
+
+        return false;
+    }
+
+    private sessionBuilder(signedAccessToken: string, rawRefreshToken: string, user: SessionUserInfo): SessionInfoDto {
+        const { exp, iat } = this.parseToken(signedAccessToken);
+
+        return {
+            accessToken: signedAccessToken,
+            refreshToken: rawRefreshToken,
+            exp,
+            iat,
+            user
+        }
+    }
+
+    private getUserIdFromToken(accessToken: string): string {
         const payload = jwt.verify(
             accessToken,
             this.configService.get<string>('JWT_SECRET'),
@@ -131,28 +172,8 @@ export class TokenService {
                 ignoreExpiration: true
             }
         );
-        console.log('Payload', payload);
-        const userId = payload.user_id;
 
-        const query = 'DELETE FROM auth.refresh_tokens WHERE user_id = $1';
-        const result = await this.db.query(query, [userId]);
-        if((result.rowCount || 0) > 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private sessionBuilder(accessToken: string, refreshToken: string, user: SessionUserInfo) {
-        const { exp, iat } = this.parseToken(accessToken);
-
-        return {
-            accessToken,
-            refreshToken,
-            exp,
-            iat,
-            user
-        }
+        return payload.user_id;
     }
 
     parseToken(token: string): SessionUserInfo & { exp: number, iat: number } {

@@ -33,8 +33,10 @@ export class KeysService {
         return this.publicKey;
     }
 
-    getJwks(): any {
-        return 
-    }
+    // // research jwks key arrays and its purpose in key rotations
+    // getJwks(): any {
+    //     const publicKey = crypto.createPublicKey(this.publicKey);
+    //     return publicKey.export({ format: 'jwk' });
+    // }
 
 }

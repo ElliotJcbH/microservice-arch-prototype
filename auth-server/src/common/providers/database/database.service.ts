@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
-  private pool: Pool;
+  private pool!: Pool;
 
   async onModuleInit() {
     this.pool = new Pool({

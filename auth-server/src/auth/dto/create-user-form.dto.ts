@@ -3,12 +3,12 @@ import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 export class CreateUserForm {
 
     @IsEmail()
-    email: string;
+    email!: string;
 
     @IsNotEmpty()
-    username: string;
+    username!: string;
 
     @IsStrongPassword()
-    password: string;
+    password!: string;
 
 }

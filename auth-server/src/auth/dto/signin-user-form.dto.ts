@@ -3,9 +3,9 @@ import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 export class SignInUserForm {
 
     @IsEmail()
-    email: string;
+    email!: string;
 
     @IsStrongPassword()
-    password: string;
+    password!: string;
 
 }
