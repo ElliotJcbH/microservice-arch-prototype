@@ -1,19 +1,14 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Observable } from "rxjs";
-import { KeysService } from "../providers/keys.service";
-import * as jwt from 'jsonwebtoken';
 
 // This guard checks if the Auth Header with type "Bearer" follows a valid format
 // It DOES NOT verify the token that comes with the bearer
 @Injectable()
 export class BearerAuthGuard implements CanActivate {
 
-    constructor(
-        private readonly keysService: KeysService
-    ){}
+    constructor(){}
 
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
-        
         const req = context.switchToHttp().getRequest<Request>();
         const headers = new Headers(req.headers);
         const authorization = headers.get('Authorization');

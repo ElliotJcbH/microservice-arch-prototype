@@ -4,22 +4,20 @@ import * as jwt from 'jsonwebtoken';
 import { SessionInfoDto } from "src/auth/dto/session-info.dto";
 import SessionUserInfo from "src/common/interface/session-user-info.interface";
 import { DatabaseService } from "src/common/providers/database/database.service";
-import { KeysService } from "../keys.service";
 import crypto from 'node:crypto';
 import { hashPassword, verifyPassword } from "src/utils/auth.utils";
-import { JwksService } from "../jwks.service";
+import { KEY_STORE } from "src/common/configs/jwt.keys.config";
 
 const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 const ACCESS_TOKEN_EXPIRATION = '10s';
 
+// TODO: Implement kid logic into access token header
 @Injectable()
 export class TokenService {
 
     constructor(
         private readonly db: DatabaseService,
         private readonly configService: ConfigService,
-        private readonly keysService: KeysService,
-        private readonly jwksService: JwksService,
     ) {}
 
     async createTokens(data: Record<string, any>): Promise<SessionInfoDto> {
@@ -35,19 +33,25 @@ export class TokenService {
     }
     
     createAccessToken(data: Record<string, any>): string {
-        
-        const privateKey = this.keysService.getPrivateKey();
-        const signedAccessToken = jwt.sign(
-            {
-                user_id: data.user_id,
-                email: data.email,
-                username: data.username,
-                email_is_verified: data.email_is_verified,
-                metadata: data.metadata
-            },
-            privateKey,
-            { expiresIn: ACCESS_TOKEN_EXPIRATION } 
-        )
+    
+        const privateKey = KEY_STORE.keys[KEY_STORE.currentKeyId].privateKey;
+        const payload =  
+        {
+            user_id: data.user_id,
+            email: data.email,
+            username: data.username,
+            email_is_verified: data.email_is_verified,
+            metadata: data.metadata,
+        }
+        const options: jwt.SignOptions = 
+        { 
+            expiresIn: ACCESS_TOKEN_EXPIRATION,
+            header: {
+                alg: 'RS256',
+                kid: KEY_STORE.currentKeyId,
+            }
+        } 
+        const signedAccessToken = jwt.sign(payload, privateKey, options)
 
         return signedAccessToken;
     }
@@ -55,8 +59,13 @@ export class TokenService {
     async renewAccessToken(accessToken: string, rawRefreshToken: string): Promise<string> {
 
         let payload;
+        let accessTokenHeaders = jwt.decode(accessToken, { complete: true })?.header;
+        let kid = accessTokenHeaders?.kid;
+
+        if(!kid) throw new UnauthorizedException('Invalid access token');
+        
         try {
-            payload = jwt.verify(accessToken, this.jwksService.getPublicKeyFromJwks()); // TODO: How to verify with JWKS?
+            payload = jwt.verify(accessToken, KEY_STORE.keys[kid].publicKey); 
         } catch(e) {
             throw new UnauthorizedException(e instanceof Error ? e.message : "Invalid access token");
         }

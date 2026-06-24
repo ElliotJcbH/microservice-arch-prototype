@@ -1,37 +1,38 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import * as fs from 'fs';
+// import { Injectable } from "@nestjs/common";
+// import { ConfigService } from "@nestjs/config";
+// import * as fs from 'fs';
 
-@Injectable()
-export class KeysService {
+// ! DEPRECTATED CLASS
+// @Injectable()
+// export class KeysService {
     // This class is used to supply private and public keys for signing and authentication
 
-    private privateKey: string = '';
-    private publicKey: string = '';
+    // private privateKey: string = '';
+    // private publicKey: string = '';
 
-    constructor(private configService: ConfigService) {
-        this.loadKeys();
-    }
+    // constructor(private configService: ConfigService) {
+    //     this.loadKeys();
+    // }
 
-    private loadKeys() {
-        const absPrivateKeyPath = this.configService.get<string>('PRIVATE_KEY_PATH');
-        const absPublicKeyPath = this.configService.get<string>('PUBLIC_KEY_PATH');
+    // private loadKeys() {
+    //     const absPrivateKeyPath = this.configService.get<string>('PRIVATE_KEY_PATH');
+    //     const absPublicKeyPath = this.configService.get<string>('PUBLIC_KEY_PATH');
 
-        if(!absPrivateKeyPath || !absPublicKeyPath) {
-            throw Error('Error in KeysService: Private or Public Keys not set.')
-        }
+    //     if(!absPrivateKeyPath || !absPublicKeyPath) {
+    //         throw Error('Error in KeysService: Private or Public Keys not set.')
+    //     }
 
-        this.privateKey = fs.readFileSync(absPrivateKeyPath, 'utf8');
-        this.publicKey = fs.readFileSync(absPublicKeyPath, 'utf8');
-    }
+    //     this.privateKey = fs.readFileSync(absPrivateKeyPath, 'utf8');
+    //     this.publicKey = fs.readFileSync(absPublicKeyPath, 'utf8');
+    // }
 
-    getPrivateKey(): string {
-        return this.privateKey;
-    }
+    // getPrivateKey(): string {
+    //     return this.privateKey;
+    // }
 
-    getPublicKey(): string {
-        return this.publicKey;
-    }
+    // getPublicKey(): string {
+    //     return this.publicKey;
+    // }
 
     // // research jwks key arrays and its purpose in key rotations
     // getJwks(): any {
@@ -39,4 +40,4 @@ export class KeysService {
     //     return publicKey.export({ format: 'jwk' });
     // }
 
-}
+// }
