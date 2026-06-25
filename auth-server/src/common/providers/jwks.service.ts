@@ -9,9 +9,6 @@ export class JwksService {
     constructor(){}
 
     getJwks() {
-        // const publicKey = crypto.createPublicKey(this.keysService.getPublicKey());
-        // return publicKey.export({ format: 'jwk' });
-
         const keys: Array<JSONWebKey> = Object.keys(KEY_STORE.keys).map(kid => {
             const pem = KEY_STORE.keys[kid].publicKey;
 
@@ -29,18 +26,5 @@ export class JwksService {
 
         return { keys }
     }
-
-    // getPublicKeyFromJwks(jwks) {
-    //     let client = jwksClient({
-    //         jwksUri: ""
-    //     })
-
-    //     function getKey(header, callback){
-    //     client.getSigningKey(header.kid, function(err, key) {
-    //         var signingKey = key.publicKey || key.rsaPublicKey;
-    //         callback(null, signingKey);
-    //     });
-    //     }
-    // }
 
 }

@@ -1,14 +1,14 @@
 import { Injectable, InternalServerErrorException, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import * as jwt from 'jsonwebtoken';
-import { SessionInfoDto } from "src/auth/dto/session-info.dto";
-import SessionUserInfo from "src/common/interface/session-user-info.interface";
-import { DatabaseService } from "src/common/providers/database/database.service";
 import crypto from 'node:crypto';
-import { hashPassword, verifyPassword } from "src/utils/auth.utils";
-import { KEY_STORE } from "src/common/configs/jwt.keys.config";
+import { hashPassword, verifyPassword } from "@utils/auth.utils";
+import { SessionInfoDto } from "src/auth/dto/session-info.dto";
+import SessionUserInfo from "@interface/session-user-info.interface";
+import { DatabaseService } from "@providers/database/database.service";
+import { KEY_STORE } from "@configs/jwt.keys.config";
 
-const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
+const REFRESH_TOKEN_EXPIRATION_DAYS = 30; 
 const ACCESS_TOKEN_EXPIRATION = '10s';
 
 // TODO: Implement kid logic into access token header
