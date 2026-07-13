@@ -12,7 +12,7 @@ describe('AuthController (E2E)', () => {
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
-            imports: [AppModule]
+            imports: [AppModule],
         }).compile();
 
         app = moduleFixture.createNestApplication();
@@ -33,7 +33,9 @@ describe('AuthController (E2E)', () => {
                 expect(response.body).toHaveProperty('accessToken');
                 expect(response.headers['set-cookie']).toBeDefined();
                 expect(response.headers['set-cookie']).toHaveLength(1);
-                expect(response.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
+                expect(response.headers['set-cookie'][0]).toMatch(
+                    /^refresh_token=/,
+                );
             });
     });
 
@@ -49,7 +51,9 @@ describe('AuthController (E2E)', () => {
                 expect(response.body).toHaveProperty('accessToken');
                 expect(response.headers['set-cookie']).toBeDefined();
                 expect(response.headers['set-cookie']).toHaveLength(1);
-                expect(response.headers['set-cookie'][0]).toMatch(/^refresh_token=/);
+                expect(response.headers['set-cookie'][0]).toMatch(
+                    /^refresh_token=/,
+                );
             });
     });
 
@@ -74,7 +78,7 @@ describe('AuthController (E2E)', () => {
             .expect(201);
 
         expect(logoutResponse).toBeTruthy();
-    }); 
+    });
 
     afterAll(async () => {
         await app.close();
