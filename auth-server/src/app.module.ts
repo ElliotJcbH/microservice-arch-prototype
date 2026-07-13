@@ -15,7 +15,7 @@ import { UserRecordModule } from '@providers/user/user-record.module';
         AuthModule,
         ConfigModule.forRoot({
             isGlobal: true, // Makes ConfigModule available globally
-            envFilePath: '.env', // Specify your .env file path
+            envFilePath: ['.env.local', '.env'], // Specify your .env file path
         }),
     ],
     controllers: [AppController], // AboutController is a Test Controller

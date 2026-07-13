@@ -1,37 +1,39 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 
 @Injectable()
-export class DatabaseService implements OnModuleInit {
-  private pool!: Pool;
+export class DatabaseService implements OnModuleInit, OnModuleDestroy {
+    private pool!: Pool;
 
-  async onModuleInit() {
-    this.pool = new Pool({
-      // connectionString: process.env.PG_URL,
-      // connectionString: "postgresql://postgres:rising-sun@192.168.254.103:5432/postgres"
-      connectionString: "postgresql://postgres:rising-sun@localhost:5432/postgres"
-    });
+    constructor(private configService: ConfigService) {}
 
-    // Test connection on startup
-    try {
-      const client = await this.pool.connect();
-      console.log('Database connected successfully');
-      client.release();
-    } catch (err) {
-      console.error('Database connection failed:', err);
-      throw err;
+    async onModuleInit() {
+        this.pool = new Pool({
+            connectionString: this.configService.get<string>('PG_URL'),
+            // connectionString: "postgresql://postgres:rising-sun@192.168.254.103:5432/postgres"
+            // connectionString: "postgresql://postgres:rising-sun@localhost:5432/postgres"
+        });
+
+        try {
+            const client = await this.pool.connect();
+            console.log('Database connected successfully');
+            client.release();
+        } catch (err) {
+            console.error('Database connection failed:', err);
+            throw err;
+        }
     }
-  }
 
-  async onModuleDestroy() {
-    await this.pool.end(); 
-  }
+    async onModuleDestroy() {
+        await this.pool.end();
+    }
 
-  async query(text: string, params?: any[]) {
-    return this.pool.query(text, params);
-  }
+    async query(text: string, params?: any[]) {
+        return this.pool.query(text, params);
+    }
 
-  async getClient() {
-    return this.pool.connect();
-  }
+    async getClient() {
+        return this.pool.connect();
+    }
 }

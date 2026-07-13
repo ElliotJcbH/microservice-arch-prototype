@@ -33,7 +33,7 @@ export class UserRecordService {
             ]);
             user = result.rows[0] as IUserRecord;
         } catch (e) {
-            console.log(
+            console.error(
                 `Error [Database Exception]: ${e instanceof Error ? e.message : e}`,
             );
             throw new InternalServerErrorException();
@@ -46,7 +46,7 @@ export class UserRecordService {
         formData: SignInUserFormDto,
     ): Promise<IUserRecord> {
         if (!formData.email || !formData.password) {
-            console.log(
+            console.error(
                 'Error [Bad Request]: Email or password missing from user input at login',
             );
             throw new BadRequestException('Missing username or password');
@@ -63,21 +63,23 @@ export class UserRecordService {
             result = await this.db.query(query, [formData.email]);
             user = result.rows[0];
         } catch (e) {
-            console.log(
+            console.error(
                 `Error [Database Exception]: ${e instanceof Error ? e.message : e}`,
             );
             throw new InternalServerErrorException();
         }
 
         if (!user) {
-            console.log(
+            console.error(
                 `Error [Not Found]: User with email ${formData.email} does not exist`,
             );
             throw new NotFoundException('User does not exist');
         }
 
         if (!(await verifyHash(formData.password, user.password))) {
-            console.log('Invalid credentials');
+            console.error(
+                'Error [Unauthorized Exception]: User entered invalid credentials',
+            );
             throw new UnauthorizedException('Invalid credentials');
         }
 
