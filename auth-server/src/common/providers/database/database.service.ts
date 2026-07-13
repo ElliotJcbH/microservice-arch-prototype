@@ -23,6 +23,10 @@ export class DatabaseService implements OnModuleInit {
     }
   }
 
+  async onModuleDestroy() {
+    await this.pool.end(); 
+  }
+
   async query(text: string, params?: any[]) {
     return this.pool.query(text, params);
   }
