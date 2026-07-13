@@ -23,11 +23,13 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["jest"],
     "paths": {
+      "@decorators/*": ["./src/common/decorators/*"],
       "@configs/*": ["./src/common/configs/*"],
       "@providers/*": ["./src/common/providers/*"],
       "@guards/*": ["./src/common/guards/*"],
       "@interface/*": ["./src/common/interface/*"],
       "@middleware/*": ["./src/common/middleware/*"],
+      "@interceptors/*": ["./src/common/interceptors/*"],
       "@utils/*": ["./src/utils/*"],
       "@keys/*": ["./keys/*"],
       "src/*": ["./src/*"]

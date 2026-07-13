@@ -1,6 +1,6 @@
 import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 
-export class CreateUserForm {
+export class CreateUserFormDto {
 
     @IsEmail()
     email!: string;

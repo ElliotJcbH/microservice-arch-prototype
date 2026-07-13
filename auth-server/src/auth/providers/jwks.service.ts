@@ -1,5 +1,5 @@
+import { KEY_STORE } from "@configs/jwt.keys.config";
 import { Injectable } from "@nestjs/common";
-import { KEY_STORE } from '../configs/jwt.keys.config';
 import type { JSONWebKey } from "jwks-rsa";
 import { pem2jwk } from "pem-jwk";
 

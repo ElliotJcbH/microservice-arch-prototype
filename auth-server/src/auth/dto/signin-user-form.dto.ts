@@ -1,11 +1,11 @@
-import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
+import { IsAscii, IsEmail } from 'class-validator';
 
-export class SignInUserForm {
+export class SignInUserFormDto {
 
     @IsEmail()
     email!: string;
 
-    @IsStrongPassword()
+    @IsAscii()
     password!: string;
 
 }

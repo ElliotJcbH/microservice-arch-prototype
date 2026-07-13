@@ -8,7 +8,8 @@ export class DatabaseService implements OnModuleInit {
   async onModuleInit() {
     this.pool = new Pool({
       // connectionString: process.env.PG_URL,
-      connectionString: "postgresql://postgres:rising-sun@192.168.254.103:5432/postgres"
+      // connectionString: "postgresql://postgres:rising-sun@192.168.254.103:5432/postgres"
+      connectionString: "postgresql://postgres:rising-sun@localhost:5432/postgres"
     });
 
     // Test connection on startup

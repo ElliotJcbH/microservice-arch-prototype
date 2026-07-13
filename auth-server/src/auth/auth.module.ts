@@ -1,13 +1,23 @@
-import { Module } from "@nestjs/common";
-import { AuthController } from "./auth.controller";
-import { AuthService } from "./auth.service";
-import { TokenService } from "src/common/providers/token/token.service";
-import { JwksService } from "src/common/providers/jwks.service";
+import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { JwksService } from './providers/jwks.service';
+import { TokenService } from './providers/token.service';
+import { TokenRecordService } from './providers/token-record.service';
 
 @Module({
     imports: [],
     controllers: [AuthController],
-    providers: [AuthService, TokenService, JwksService,],
+    providers: [
+        AuthService,
+        TokenService,
+        TokenRecordService,
+        JwksService,
+        // {
+        //     provide: APP_INTERCEPTOR,
+        //     useClass: RefreshTokenInterceptor
+        // }, Interceptors are not injected into services, instead by doing this, i unintentionally made RefreshTokenInterceptor a module-level interceptor
+    ],
     exports: [],
 })
-export class AuthModule{}
+export class AuthModule {}

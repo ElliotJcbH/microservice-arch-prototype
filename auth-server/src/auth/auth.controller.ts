@@ -1,43 +1,61 @@
-import { Controller, Post, Body, Get, Headers, Delete, Head, UseGuards, Req } from "@nestjs/common";
-import { CreateUserForm } from "./dto/create-user-form.dto";
-import { SignInUserForm } from "./dto/signin-user-form.dto";
-import { AuthService } from "./auth.service";
-import { SessionInfoDto } from "./dto/session-info.dto";
-import { BearerAuthGuard } from "src/common/guards/bearerAuth.guard";
+import {
+    Controller,
+    Post,
+    Body,
+    Get,
+    Headers,
+    Delete,
+    UseInterceptors,
+} from '@nestjs/common';
+import { CreateUserFormDto } from './dto/create-user-form.dto';
+import { SignInUserFormDto } from './dto/signin-user-form.dto';
+import { AuthService } from './auth.service';
+import { SessionInfoDto } from './dto/session-info.dto';
+import { RefreshTokenInterceptor } from '@interceptors/refreshToken.interceptor';
+import { Cookies } from 'src/common/decorators/cookies.decorator';
+import { plainToInstance } from 'class-transformer';
+import { IgnoreAccessTokenExpiration } from '@decorators/ignore-access-token-expiration.decorator';
+import { IsPublicRoute } from '@decorators/public-route.decorator';
 
-@Controller('auth') 
+@Controller('auth')
 export class AuthController {
+    constructor(private readonly authService: AuthService) {}
 
-    constructor(
-        private readonly authService: AuthService,
-    ) {}
-
-    @Post('register') // TODO: Add refresh token cookie interceptor
-    async register( @Body() createUserDto: CreateUserForm ): Promise<SessionInfoDto> {
-        return await this.authService.register(createUserDto)
+    @IsPublicRoute()
+    @Post('register')
+    @UseInterceptors(RefreshTokenInterceptor)
+    async register(
+        @Body() createUserDto: CreateUserFormDto,
+    ): Promise<SessionInfoDto> {
+        const sessionInfo = await this.authService.register(createUserDto);
+        return plainToInstance(SessionInfoDto, sessionInfo);
     }
 
+    @IsPublicRoute()
     @Post('login')
-    async login( @Body() formDataDto: SignInUserForm ) {
-        return this.authService.login(formDataDto);
+    @UseInterceptors(RefreshTokenInterceptor)
+    async login(
+        @Body() formDataDto: SignInUserFormDto,
+    ): Promise<SessionInfoDto> {
+        const sessionInfo = await this.authService.login(formDataDto);
+        return plainToInstance(SessionInfoDto, sessionInfo);
     }
 
-    @UseGuards(BearerAuthGuard)
-    @Delete('logout')
-    async logout( 
+    @IgnoreAccessTokenExpiration()
+    @Post('logout')
+    async logout(
         @Headers('authorization') authorization: string,
-        @Cookies('refreshToken') cookies: string
+        @Cookies('refresh_token') refreshToken: string,
     ): Promise<boolean> {
-        return await this.authService.logout(authorization);
+        return await this.authService.logout(authorization, refreshToken);
     }
 
-    @UseGuards(BearerAuthGuard)
-    @Get('renewToken')
-    async verifyTokens( 
+    @IgnoreAccessTokenExpiration()
+    @Get('refresh')
+    async verifyTokens(
         @Headers('authorization') authorization: string,
-        @Cookies('refreshToken') cookies: string, // TODO: Create Cookies decorator
-    ): Promise<string> { 
-        return await this.authService.renewToken(authorization);
+        @Cookies('refresh_token') refreshToken: string,
+    ): Promise<string> {
+        return await this.authService.renewToken(authorization, refreshToken);
     }
-
 }

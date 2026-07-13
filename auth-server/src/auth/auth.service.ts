@@ -1,88 +1,57 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CreateUserForm } from './dto/create-user-form.dto';
-import { SignInUserForm } from './dto/signin-user-form.dto';
-import { hashPassword, verifyPassword } from 'src/utils/auth.utils';
-import { TokenService } from 'src/common/providers/token/token.service';
-import { DatabaseService } from 'src/common/providers/database/database.service';
+import { Injectable } from '@nestjs/common';
+import { CreateUserFormDto } from './dto/create-user-form.dto';
+import { SignInUserFormDto } from './dto/signin-user-form.dto';
 import { SessionInfoDto } from './dto/session-info.dto';
-
-type User = {
-  user_id: string,
-  username: string,
-  email: string,
-  email_verified_at: Date,
-  metadata: Record<string, any>,
-  created_at: Date,
-}
+import { TokenService } from './providers/token.service';
+import ISessionInfo from '@interface/session-info.interface';
+import { UserRecordService } from '@providers/user/user-record.service';
+import IUserRecord from '@interface/user-record.interface';
 
 @Injectable()
 export class AuthService {
+    constructor(
+        private readonly tokenService: TokenService,
+        private readonly userRecordService: UserRecordService,
+    ) {}
 
-  constructor(
-    private readonly db: DatabaseService,
-    private readonly tokenService: TokenService,
-  ) {}
-  
-  async register(formData: CreateUserForm): Promise<SessionInfoDto> {
-
-    const hash = hashPassword(formData.password);
-
-    const query = 'INSERT INTO users(username, email, password) VALUES($1, $2, $3) RETURNING user_id, username, email, email_verified_at, metadata, created_at';
-    const result = await this.db.query(query, [formData.username, formData.email, hash]);
-    
-    const user: User = result.rows[0] as User;
-    if(!user) {
-      throw new InternalServerErrorException('Failed to create new user');
+    async register(formData: CreateUserFormDto): Promise<ISessionInfo> {
+        const user: IUserRecord =
+            await this.userRecordService.createUser(formData);
+        const sessionInfo: ISessionInfo =
+            await this.tokenService.createTokens(user);
+        return sessionInfo;
     }
 
-    const sessionInfo: SessionInfoDto = await this.tokenService.createTokens(user);
-
-    return(sessionInfo);
-
-  }
-
-  async login(formData: SignInUserForm): Promise<SessionInfoDto> {
-
-    if(!formData.email || !formData.password) {
-      throw new BadRequestException('Invalid username or password.');
+    async login(formData: SignInUserFormDto): Promise<SessionInfoDto> {
+        const user: IUserRecord =
+            await this.userRecordService.fetchUserWithSignInData(formData);
+        return await this.tokenService.createTokens(user);
     }
 
-    const query = 'SELECT user_id, username, password, email, email_verified_at, metadata, created_at FROM users WHERE email = $1';
-    const result = await this.db.query(query, [formData.email]);
+    async logout(
+        authorization: string,
+        rawRefreshToken: string,
+    ): Promise<boolean> {
+        const requestToken: string = authorization.split(' ')[1];
+        const isRefreshTokenDeleted: boolean =
+            await this.tokenService.deleteRefreshToken(
+                requestToken,
+                rawRefreshToken,
+            );
 
-    const user = result.rows[0] as User & { password: string };
-    if(!user.username) {
-      throw new NotFoundException('User does not exist');
+        return isRefreshTokenDeleted;
     }
 
-    if(!await verifyPassword(formData.password, user.password)) {
-      throw new UnauthorizedException('Invalid credentials');
+    async renewToken(
+        authorization: string,
+        refreshToken: string,
+    ): Promise<string> {
+        const accessToken: string = authorization.split(' ')[1];
+        const newAccessToken: string = await this.tokenService.renewAccessToken(
+            accessToken,
+            refreshToken,
+        );
+
+        return newAccessToken;
     }
-
-    return await this.tokenService.createTokens(user);
-
-  }
-
-  async logout(authorization: string, rawRefreshToken: string): Promise<boolean> {
-    const accessToken = authorization.split(' ')[1];       
-    const isRefreshTokenDeleted = await this.tokenService.deleteRefreshToken(accessToken, rawRefreshToken);
-
-    return isRefreshTokenDeleted;
-
-  }
-
-  // async verifyTokens(authHeader: string): Promise<string> {
-  //   const accessToken = authHeader.split(' ')[1];    
-  //   const newAccessToken = await this.tokenService.verifyToken(accessToken) || '';
-
-  //   return newAccessToken;
-  // }
-
-  async renewToken(authorization: string, refreshToken: string): Promise<string> {
-    const accessToken = authorization.split(' ')[1];       
-    const newAccessToken = await this.tokenService.renewAccessToken(accessToken, refreshToken);
-
-    return newAccessToken;
-  }
-  
 }

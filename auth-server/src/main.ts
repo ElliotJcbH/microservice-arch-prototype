@@ -2,19 +2,22 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { logger } from './common/middleware/logger.middleware';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule);
 
-  app.use(logger);
+    app.use(logger);
+    app.useLogger(console);
+    app.use(cookieParser());
 
-  app.enableCors({
-    origin: 'http://localhost:5173',
-    credentials: true,
-  });
+    app.enableCors({
+        origin: 'http://localhost:5173',
+        credentials: true,
+    });
 
-  app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe());
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+    await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();
