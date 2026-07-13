@@ -6,9 +6,9 @@ import request from 'supertest';
 
 describe('AuthController (E2E)', () => {
     let app: INestApplication;
-    let testEmail: string = 'elliot.jacob28@gmail.com';
+    let testEmail: string = 'elliot.jacob30@gmail.com';
     let testPassword: string = 'Password123!';
-    let testUsername: string = 'rokketo20';
+    let testUsername: string = 'rokketo22';
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({

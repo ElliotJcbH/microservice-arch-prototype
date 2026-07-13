@@ -72,8 +72,8 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
+    "rootDir": ".",
+    "testMatch": ["<rootDir>/test/**/*.spec.ts"],
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -83,17 +83,17 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^#keys/(.*)$": "<rootDir>/../keys/$1",
-      "^@configs/(.*)$": "<rootDir>/common/configs/$1",
-      "^@providers/(.*)$": "<rootDir>/common/providers/$1",
-      "^@guards/(.*)$": "<rootDir>/common/guards/$1",
-      "^@interface/(.*)$": "<rootDir>/common/interface/$1",
-      "^@middleware/(.*)$": "<rootDir>/common/middleware/$1",
-      "^@interceptors/(.*)$": "<rootDir>/common/interceptors/$1",
-      "^@decorators/(.*)$": "<rootDir>/common/decorators/$1",
-      "^@utils/(.*)$": "<rootDir>/utils/$1",
-      "^@keys/(.*)$": "<rootDir>/../keys/$1",
-      "^src/(.*)$": "<rootDir>/$1"
+      "^#keys/(.*)$": "<rootDir>/keys/$1",
+      "^@configs/(.*)$": "<rootDir>/src/common/configs/$1",
+      "^@providers/(.*)$": "<rootDir>/src/common/providers/$1",
+      "^@guards/(.*)$": "<rootDir>/src/common/guards/$1",
+      "^@interface/(.*)$": "<rootDir>/src/common/interface/$1",
+      "^@middleware/(.*)$": "<rootDir>/src/common/middleware/$1",
+      "^@interceptors/(.*)$": "<rootDir>/src/common/interceptors/$1",
+      "^@decorators/(.*)$": "<rootDir>/src/common/decorators/$1",
+      "^@utils/(.*)$": "<rootDir>/src/utils/$1",
+      "^@keys/(.*)$": "<rootDir>/keys/$1",
+      "^src/(.*)$": "<rootDir>/src/$1"
     }
   }
 }
