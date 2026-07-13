@@ -7,4 +7,5 @@ export default interface IAccessTokenPayload {
     metadata: Record<string, unknown>;
     exp: number;
     iat: number;
+    jti: string;
 }

@@ -43,6 +43,7 @@ export class TokenService {
         const options: jwt.SignOptions = {
             expiresIn: `${KEY_STORE.access_token_timer_ms}ms`,
             subject: data.user_id,
+            jwtid: crypto.randomUUID(),
             header: {
                 alg: 'RS256',
                 kid: KEY_STORE.currentKeyId,

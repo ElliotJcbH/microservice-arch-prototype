@@ -56,7 +56,11 @@ export class AuthController {
     async verifyTokens(
         @Headers('authorization') authorization: string,
         @Cookies('refresh_token') refreshToken: string,
-    ): Promise<string> {
-        return await this.authService.renewToken(authorization, refreshToken);
+    ): Promise<{ accessToken: string }> {
+        const accessToken = await this.authService.renewToken(authorization, refreshToken);
+
+        return {
+            accessToken
+        }
     }
 }

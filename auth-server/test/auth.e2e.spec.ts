@@ -7,10 +7,12 @@ import request from 'supertest';
 describe('AuthController (E2E)', () => {
     let app: INestApplication;
 
-    /*** IMPORTANT: Change testEmail and testUsername upon every test run ***/
-    let testEmail: string = 'elliot.jacob31@gmail.com';
+    /*** 
+        IMPORTANT: Change testEmail and testUsername upon every test run that includes /auth/register 
+    ***/
+    let testEmail: string = 'elliot.jacob32@gmail.com';
     let testPassword: string = 'Password123!';
-    let testUsername: string = 'rokketo23';
+    let testUsername: string = 'rokketo24';
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -83,7 +85,7 @@ describe('AuthController (E2E)', () => {
             });
     });
 
-    it('/auth/token (POST) - Should flow through entire app', async () => {
+    it.only('/auth/token (POST) - Should flow through entire app', async () => {
         const loginResponse = await request(app.getHttpServer())
             .post('/auth/login')
             .send({
@@ -99,10 +101,11 @@ describe('AuthController (E2E)', () => {
 
         return request(app.getHttpServer())
             .post('/auth/token')
-            .set('Cookies', cookies)
+            .set('Cookie', cookies)
             .set('Authorization', `Bearer ${accessToken}`)
             .expect(201)
             .then((response) => {
+                console.log("/auth/token Response:", response.body);
                 expect(response.body).toHaveProperty('accessToken');
                 expect(response.body.accessToken).not.toEqual(accessToken);
             });

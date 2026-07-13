@@ -16,13 +16,13 @@ export const KEY_STORE = {
                 path.join(keysDirectory, 'v1', 'private.pem'),
             ),
         },
-        v2: {
-            publicKey: fs.readFileSync(
-                path.join(keysDirectory, 'v2', 'public.pem'),
-            ),
-            privateKey: fs.readFileSync(
-                path.join(keysDirectory, 'v2', 'private.pem'),
-            ),
-        },
+        // v2: {
+        //     publicKey: fs.readFileSync(
+        //         path.join(keysDirectory, 'v2', 'public.pem'),
+        //     ),
+        //     privateKey: fs.readFileSync(
+        //         path.join(keysDirectory, 'v2', 'private.pem'),
+        //     ),
+        // },
     },
 };
