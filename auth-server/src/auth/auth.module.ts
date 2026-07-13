@@ -4,10 +4,11 @@ import { AuthService } from './auth.service';
 import { JwksService } from './providers/jwks.service';
 import { TokenService } from './providers/token.service';
 import { TokenRecordService } from './providers/token-record.service';
+import { AuthWellKnownController } from './auth.wellknown.controller';
 
 @Module({
     imports: [],
-    controllers: [AuthController],
+    controllers: [AuthController, AuthWellKnownController],
     providers: [
         AuthService,
         TokenService,

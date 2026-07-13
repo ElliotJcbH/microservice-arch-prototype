@@ -8,12 +8,20 @@ export const KEY_STORE = {
     refresh_token_timer_ms: 1000 * 60 * 60 * 24 * 30, // 30 days
     access_token_timer_ms: 1000 * 10, // 10 seconds
     keys: {
-        v1: {
+        // v1: {
+        //     publicKey: fs.readFileSync(
+        //         path.join(keysDirectory, 'v1', 'public.pem'),
+        //     ),
+        //     privateKey: fs.readFileSync(
+        //         path.join(keysDirectory, 'v1', 'private.pem'),
+        //     ),
+        // },
+        v2: {
             publicKey: fs.readFileSync(
-                path.join(keysDirectory, 'v1', 'public.pem'),
+                path.join(keysDirectory, 'v2', 'public.pem'),
             ),
             privateKey: fs.readFileSync(
-                path.join(keysDirectory, 'v1', 'private.pem'),
+                path.join(keysDirectory, 'v2', 'private.pem'),
             ),
         },
     },

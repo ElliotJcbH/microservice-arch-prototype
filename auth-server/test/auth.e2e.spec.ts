@@ -6,6 +6,8 @@ import request from 'supertest';
 
 describe('AuthController (E2E)', () => {
     let app: INestApplication;
+
+    /*** IMPORTANT: Change testEmail and testUsername upon every test run ***/
     let testEmail: string = 'elliot.jacob31@gmail.com';
     let testPassword: string = 'Password123!';
     let testUsername: string = 'rokketo23';
@@ -39,7 +41,7 @@ describe('AuthController (E2E)', () => {
             });
     });
 
-    it('/auth/login/ (POST) - Should flow through entire app', () => {
+    it('/auth/login (POST) - Should flow through entire app', () => {
         return request(app.getHttpServer())
             .post('/auth/login')
             .send({
@@ -57,7 +59,7 @@ describe('AuthController (E2E)', () => {
             });
     });
 
-    it('/auth/logout/ (POST) - Should flow through entire app', async () => {
+    it('/auth/logout (POST) - Should flow through entire app', async () => {
         const loginResponse = await request(app.getHttpServer())
             .post('/auth/login')
             .send({
@@ -71,13 +73,39 @@ describe('AuthController (E2E)', () => {
         const cookies = loginResponse.headers['set-cookie'];
         expect(cookies).toBeDefined();
 
-        const logoutResponse = await request(app.getHttpServer())
+        return request(app.getHttpServer())
             .post('/auth/logout')
             .set('Cookie', cookies)
             .set('Authorization', `Bearer ${accessToken}`)
+            .expect(201)
+            .then((response) => {
+                expect(response).toBeTruthy();
+            });
+    });
+
+    it('/auth/token (POST) - Should flow through entire app', async () => {
+        const loginResponse = await request(app.getHttpServer())
+            .post('/auth/login')
+            .send({
+                email: testEmail,
+                password: testPassword,
+            })
             .expect(201);
 
-        expect(logoutResponse).toBeTruthy();
+        const accessToken = loginResponse.body.accessToken;
+        expect(accessToken).toBeDefined();
+        const cookies = loginResponse.headers['set-cookie'];
+        expect(cookies).toBeDefined();
+
+        return request(app.getHttpServer())
+            .post('/auth/token')
+            .set('Cookies', cookies)
+            .set('Authorization', `Bearer ${accessToken}`)
+            .expect(201)
+            .then((response) => {
+                expect(response.body).toHaveProperty('accessToken');
+                expect(response.body.accessToken).not.toEqual(accessToken);
+            });
     });
 
     afterAll(async () => {

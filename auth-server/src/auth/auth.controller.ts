@@ -50,8 +50,9 @@ export class AuthController {
         return await this.authService.logout(authorization, refreshToken);
     }
 
+    // refreshes access token
     @IgnoreAccessTokenExpiration()
-    @Get('refresh')
+    @Post('token')
     async verifyTokens(
         @Headers('authorization') authorization: string,
         @Cookies('refresh_token') refreshToken: string,
