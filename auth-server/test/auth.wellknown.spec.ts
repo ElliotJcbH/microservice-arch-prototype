@@ -18,12 +18,12 @@ describe('WellKnown (E2E)', () => {
         await app.init();
     });
 
-    it('/.well-known - (GET)', () => {
+    it('/.well-known/jwks.json - (GET)', () => {
         return request(app.getHttpServer())
-            .get('/auth/.well-known')
-            .expect(201)
+            .get('/.well-known/jwks.json')
+            .expect(200)
             .then((response) => {
-                console.log('JWKS', response);
+                console.log('JWKS', response.body?.keys);
                 expect(response.body).toHaveProperty('keys');
                 expect(response.body.keys).toBeInstanceOf(Array);
                 expect(response.body.keys).toEqual(
